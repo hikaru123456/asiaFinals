@@ -24,7 +24,7 @@ app.listen(port, () => {
 const limiter = rateLimit({
   windowMs: 2 * 60 * 1000, // per 2 minutes
   max: 100, //100 reqs
-  message: { message: "Too many requests from this IP, please try again later." }
+  message: { message: "Too many requests. Try again later." }
 });
 app.use(limiter);
 
@@ -40,14 +40,14 @@ const db = mysql.createConnection({
 
 db.connect(err => {
   if (err) throw err;
-  console.log('Connected to MySQL!');
+  console.log('Connected to MySQL using Xampp');
 });
 
 
 // Register
 app.post('/register', async (req, res) => {
   const { username, password } = req.body;
-  if (!username || !password) return res.status(400).send('Missing username or password');
+  if (!username || !password) return res.status(400).send('Missing Username or Password.');
 
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -68,16 +68,16 @@ app.post('/register', async (req, res) => {
 // Login
 app.post('/login', (req, res) => {
   const { username, password } = req.body;
-  if (!username || !password) return res.status(400).send('Missing username or password');
+  if (!username || !password) return res.status(400).send('Missing Username or Password.');
 
   const sql = 'SELECT * FROM users WHERE username = ?';
   db.query(sql, [username], async (err, results) => {
     if (err) return res.status(500).send(err);
-    if (results.length === 0) return res.status(400).send('Invalid credentials');
+    if (results.length === 0) return res.status(400).send('Invalid Username.');
 
     const user = results[0];
     const validPassword = await bcrypt.compare(password, user.password);
-    if (!validPassword) return res.status(400).send('Invalid credentials');
+    if (!validPassword) return res.status(400).send('Invalid Password.');
 
     const token = jwt.sign({ id: user.id, username: user.username }, SECRET_KEY, { expiresIn: '1h' });
     res.json({ token });
@@ -88,10 +88,10 @@ app.post('/login', (req, res) => {
 function authenticateToken(req, res, next) {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
-  if (!token) return res.status(401).send('Access denied');
+  if (!token) return res.status(401).send('Access Denied. Try Again.');
 
   jwt.verify(token, SECRET_KEY, (err, user) => {
-    if (err) return res.status(403).send('Invalid token');
+    if (err) return res.status(403).send('Invalid Token. Try Again.');
     req.user = user;
     next();
   });
@@ -111,7 +111,7 @@ app.get('/posts', authenticateToken, (req, res) => {
 app.get('/posts/:id', authenticateToken, (req, res) => {
   db.query('SELECT * FROM posts WHERE id = ?', [req.params.id], (err, results) => {
     if (err) return res.status(500).send(err);
-    if (results.length === 0) return res.status(404).send({ message: 'Post not found' });
+    if (results.length === 0) return res.status(404).send({ message: 'Not found.' });
     res.json(results[0]);
   });
 });
@@ -143,7 +143,7 @@ app.put('/posts/:id', authenticateToken, (req, res) => {
 app.delete('/posts/:id', authenticateToken, (req, res) => {
   db.query('DELETE FROM posts WHERE id = ?', [req.params.id], (err) => {
     if (err) return res.status(500).send(err);
-    res.json({ message: 'Post deleted', id: req.params.id });
+    res.json({ message: 'Post Blog Deleted', id: req.params.id });
   });
 });
 
@@ -170,11 +170,6 @@ app.delete('/posts/:id', authenticateToken, (req, res) => {
 //         title: "Hello Again! I'm back.",
 //         content: "Highlights from my unforgettable cultural journey through beautiful Japan.",
 //         author: "Ekaa"
-//       },
-//       {
-//         title: "Part 5 of My Blog Journey!",
-//         content: "Learn to reduce stress and live more in the moment.",
-//         author: "Seiji"
 //       }
 // ]
 
